@@ -271,7 +271,8 @@ bool mjpeg_read_frame()
     if (found_FFD9)
     {
       // log_i("Found FFD9 at: %d.", _mjpeg_buf_offset);
-      if (_mjpeg_buf_offset > _mjpegBufSize) {
+      if (_mjpeg_buf_offset > _mjpegBufSize)
+      {
         log_e("_mjpeg_buf_offset(%d) > _mjpegBufSize (%d)", _mjpeg_buf_offset, _mjpegBufSize);
       }
       return true;

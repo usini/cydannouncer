@@ -21,28 +21,26 @@ Arduino_GFX *gfx = new Arduino_ILI9341(bus, TFT_RST, 1 /* rotation */, false /* 
 SPIClass spi = SPIClass(HSPI);
 
 /* audio */
-#include "video/esp32_audio_task.h"
+#include "media/audio_task.h"
 /* MJPEG Video */
-#include "video/mjpeg_decode_draw_task.h"
+#include "media/video_task.h"
 
-void screen_init()
+bool screen_init()
 {
-#ifdef GFX_EXTRA_PRE_INIT
-    GFX_EXTRA_PRE_INIT();
-#endif
-
     Serial.println("Init display");
     if (!gfx->begin(80000000))
     {
         Serial.println("Init display failed!");
+        return false;
     }
     gfx->fillScreen(BLACK);
 
     pinMode(GFX_BL, OUTPUT);
     digitalWrite(GFX_BL, HIGH);
+    return true;
 }
 
-void audio_init()
+bool audio_init()
 {
     Serial.println("Init I2S");
     gfx->println("Init I2S");
@@ -52,8 +50,10 @@ void audio_init()
     if (ret_val != ESP_OK)
     {
         Serial.printf("i2s_init failed: %d\n", ret_val);
+        return false;
     }
     i2s_zero_dma_buffer(I2S_NUM_0);
+    return true;
 }
 
 bool sd_init()
@@ -66,3 +66,19 @@ bool sd_init()
     return status;
 }
 
+bool media_init()
+{
+    bool video_status = screen_init();
+    bool audio_status = audio_init();
+    bool sd_status = sd_init();
+    if (video_status && audio_status && sd_status)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+#include "media/functions.h"

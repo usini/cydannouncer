@@ -8,7 +8,7 @@ static int drawMCU(JPEGDRAW *pDraw)
     return 1;
 } /* drawMCU() */
 
-bool open_video(String filename)
+bool play_video(String filename)
 {
     bool status = false;
     String aac_filename = filename + ".aac";
@@ -94,4 +94,42 @@ bool open_video(String filename)
         }
     }
     return false;
+}
+
+bool play_audio(String filename)
+{
+    bool status = false;
+    String mp3_filename = filename + ".mp3";
+    File aFile = SD.open(mp3_filename);
+
+    if (!aFile || aFile.isDirectory())
+    {
+        Serial.println("ERROR: Failed to open " + mp3_filename + " file for reading");
+        gfx->println("ERROR: Failed to open " + mp3_filename + " file for reading");
+        return false;
+    }
+    else
+    {
+        Serial.println("Start play audio task");
+        gfx->println("Start play audio task");
+        BaseType_t ret_val;
+
+        ret_val = mp3_player_task_start(&aFile, AUDIOASSIGNCORE);
+
+        if (ret_val != pdPASS)
+        {
+            Serial.printf("Audio player task start failed: %d\n", ret_val);
+            gfx->printf("Audio player task start failed: %d\n", ret_val);
+            return false;
+        }
+
+        next_frame_ms = start_ms + (++next_frame * 1000 / FPS / 2);
+        while (aFile.available()) // Read video
+        {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+        Serial.println("Audio end");
+        aFile.close();
+        return true;
+    }
 }
