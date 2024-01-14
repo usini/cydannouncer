@@ -5,7 +5,6 @@
 #define NUMBER_OF_DRAW_BUFFER 9
 
 #include <FS.h>
-#include <JPEGDEC.h>
 
 typedef struct
 {
@@ -28,7 +27,7 @@ typedef struct
 
 static JPEGDRAW jpegdraws[NUMBER_OF_DRAW_BUFFER];
 static int _draw_queue_cnt = 0;
-static JPEGDEC _jpegDec;
+
 static xQueueHandle _xqh;
 static bool _useBigEndian;
 

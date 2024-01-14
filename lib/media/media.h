@@ -1,11 +1,15 @@
 
 #include <FS.h>
 #include <SD.h>
+#include <LittleFS.h>
+#include <JPEGDEC.h>
 
 /* variables */
 static int next_frame = 0;
 static int skipped_frames = 0;
 static unsigned long start_ms, curr_ms, next_frame_ms;
+static JPEGDEC _jpegDec;
+bool screen_available = true;
 
 #define FPS 30
 #define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 8)
@@ -21,9 +25,11 @@ Arduino_GFX *gfx = new Arduino_ILI9341(bus, TFT_RST, 1 /* rotation */, false /* 
 SPIClass spi = SPIClass(HSPI);
 
 /* audio */
-#include "media/audio_task.h"
+#include "audio_task.h"
 /* MJPEG Video */
-#include "media/video_task.h"
+#include "video_task.h"
+
+#include "functions.h"
 
 bool screen_init()
 {
@@ -56,13 +62,20 @@ bool audio_init()
     return true;
 }
 
-bool sd_init()
+bool fs_init()
 {
     Serial.println("Init FS");
     gfx->println("Init FS");
+    bool status = false;
+    status = LittleFS.begin(false, "/flash");
+    return status;
+}
 
+bool sd_init()
+{
+    gfx->println("Init SD");
     spi.begin(SD_SCK, SD_MISO /* MISO */, SD_MOSI /* MOSI */, SD_CS /* SS */);
-    bool status = !SD.begin(SD_CS /* SS */, spi, 80000000);
+    bool status = !SD.begin(SD_CS /* SS */, spi, 80000000, "/sdcard");
     return status;
 }
 
@@ -70,8 +83,9 @@ bool media_init()
 {
     bool video_status = screen_init();
     bool audio_status = audio_init();
+    bool fs_status = fs_init();
     bool sd_status = sd_init();
-    if (video_status && audio_status && sd_status)
+    if (video_status && audio_status && sd_status && fs_init)
     {
         return true;
     }
@@ -80,5 +94,3 @@ bool media_init()
         return false;
     }
 }
-
-#include "media/functions.h"

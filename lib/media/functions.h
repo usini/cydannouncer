@@ -1,15 +1,32 @@
 // pixel drawing callback
+bool video_play = false;
+
 static int drawMCU(JPEGDRAW *pDraw)
 {
     // Serial.printf("Draw pos = (%d, %d), size = %d x %d\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
     unsigned long s = millis();
-    gfx->draw16bitRGBBitmap(pDraw->x, pDraw->y, pDraw->pPixels, pDraw->iWidth, pDraw->iHeight);
+gfx->draw16bitRGBBitmap(pDraw->x, pDraw->y, pDraw->pPixels, pDraw->iWidth, pDraw->iHeight);    
     total_show_video_ms += millis() - s;
     return 1;
 } /* drawMCU() */
 
+/*
+bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
+{
+   // Stop further decoding as image is running off bottom of screen
+  if ( y >= gfx->height() ) return 0;
+
+  // In ILI9341 library this function clips the image block at TFT boundaries
+  gfx->drawBitmap(x, y, bitmap, w, h);
+
+  // Return 1 to decode next block
+  return 1;
+}
+*/
+
 bool play_video(String filename)
 {
+    
     bool status = false;
     String aac_filename = filename + ".aac";
     Serial.println("Open AAC file: " + aac_filename);
@@ -59,7 +76,8 @@ bool play_video(String filename)
             start_ms = millis();
             curr_ms = millis();
             next_frame_ms = start_ms + (++next_frame * 1000 / FPS / 2);
-            while (vFile.available() && mjpeg_read_frame()) // Read video
+            video_play = true;
+            while (vFile.available() && mjpeg_read_frame() || !video_play) // Read video
             {
                 total_read_video_ms += millis() - curr_ms;
                 curr_ms = millis();
@@ -90,6 +108,7 @@ bool play_video(String filename)
             Serial.println("AV end");
             vFile.close();
             aFile.close();
+            video_play = false;
             return true;
         }
     }
@@ -132,4 +151,33 @@ bool play_audio(String filename)
         aFile.close();
         return true;
     }
+}
+
+int JPEGDraw(JPEGDRAW *pDraw)
+{
+//  Serial.printf("jpeg draw: x,y=%d,%d, cx,cy = %d,%d\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
+//  Serial.printf("Pixel 0 = 0x%04x\n", pDraw->pPixels[0]);
+  gfx->draw16bitRGBBitmap(pDraw->x, pDraw->y, pDraw->pPixels, pDraw->iWidth, pDraw->iHeight);
+  return 1;
+} /* JPEGDraw() */
+
+bool drawJPG(String filename){
+    screen_available = false;
+    gfx->fillScreen(BLACK);
+    File jpegFile = LittleFS.open(filename);
+    _jpegDec.open(jpegFile, JPEGDraw);
+    _jpegDec.decode(0,0,0);
+    _jpegDec.close();
+    screen_available = true;
+    return true;
+}
+
+bool drawJPGpos(int x, int y, String filename){
+    screen_available = false;
+    File jpegFile = LittleFS.open(filename);
+    _jpegDec.open(jpegFile, JPEGDraw);
+    _jpegDec.decode(x,y,0);
+    _jpegDec.close();
+    screen_available = true;
+    return true;
 }
