@@ -75,7 +75,7 @@ bool sd_init()
 {
     gfx->println("Init SD");
     spi.begin(SD_SCK, SD_MISO /* MISO */, SD_MOSI /* MOSI */, SD_CS /* SS */);
-    bool status = !SD.begin(SD_CS /* SS */, spi, 80000000, "/sdcard");
+    bool status = SD.begin(SD_CS /* SS */, spi, 80000000, "/sdcard");
     return status;
 }
 
@@ -85,6 +85,15 @@ bool media_init()
     bool audio_status = audio_init();
     bool fs_status = fs_init();
     bool sd_status = sd_init();
+    Serial.println(sd_status);
+    if (sd_status)
+    {
+        drawJPGpos(288, 0, "/sdcard.jpg");
+    }
+    else
+    {
+        drawJPGpos(288, 0, "/nosdcard.jpg");
+    }
     if (video_status && audio_status && sd_status && fs_init)
     {
         return true;
